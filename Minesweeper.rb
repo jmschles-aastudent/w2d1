@@ -37,7 +37,10 @@ class Minesweeper
     if won
       puts "Yay! You win!"
     else
-      puts "You suck at minesweeper."
+      @board.reveal_mines
+      @board.print_board
+      puts "BOOM!"
+      5.times { puts "You suck at minesweeper." }
     end
   end
 end
@@ -78,25 +81,31 @@ class Board
   end
 
   def handle_move(move)
-    case move[0]
+    case move.shift
     when 'F'
-      @board[move[1]][move[2]] = 'F'
+      flag(move)
+    when 'U'
+      unflag(move)
     when 'R'
-      return false if @mines.include?([move[1], move[2]])
-      reveal([move[1], move[2]])
+      return false if @mines.include?([move[0], move[1]])
+      reveal([move[0], move[1]])
     end
 
     true
   end
 
   def flag(coord)
-    @board[coord[0], coord[1]] = 'F'
+    @board[coord[0]][coord[1]] = 'F'
+  end
+
+  def unflag(coord)
+    @board[coord[0]][coord[1]] = '?'
   end
 
   def reveal(coord, visited_squares = Set.new)
     num_adj_mines = adjacent_mines(coord)
     unless num_adj_mines == "_"
-      @board[coord[0]][coord[1]] = num_adj_mines
+      @board[coord[0]][coord[1]] = num_adj_mines unless @board[coord[0]][coord[1]] == 'F'
       return
     else
       @board[coord[0]][coord[1]] = "_"
@@ -145,6 +154,12 @@ class Board
     true
   end
 
+  def reveal_mines
+    @mines.each do |mine|
+      @board[mine[0]][mine[1]] = '*'
+    end
+  end
+
 end
 
 class Player
@@ -161,15 +176,19 @@ class Player
     x = gets.chomp.to_i
     puts "Enter a y co-ordinate for your move: "
     y = gets.chomp.to_i
+    until [x, y].all? { |n| n.is_a?(Fixnum) && n >= 0 }
+      puts "Invalid coordinates, try again."
+      x, y = get_position
+    end
     [x, y]
   end
 
   def get_choice
-    puts "Do you wish to flag a move or click? Enter 'F' to flag or 'R' to reveal"
-    input = gets.chomp
-    until input == 'F' || input == 'R'
-      puts "Invalid input. Please enter F or R"
-      gets.chomp
+    puts "Enter 'F' to flag, 'R' to reveal, or 'U' to unflag."
+    input = gets.chomp.upcase
+    until input == 'F' || input == 'R' || input == 'U'
+      puts "Invalid input. Please enter F, R, or U."
+      input = gets.chomp.upcase
     end
     input
   end
