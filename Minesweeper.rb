@@ -95,11 +95,11 @@ class Board
 
   def reveal(coord, visited_squares = Set.new)
     num_adj_mines = adjacent_mines(coord)
-    unless num_adj_mines == "0"
+    unless num_adj_mines == "_"
       @board[coord[0]][coord[1]] = num_adj_mines
       return
     else
-      @board[coord[0]][coord[1]] = "0"
+      @board[coord[0]][coord[1]] = "_"
 
       adjacent_squares(coord).each do |sq|
         next if visited_squares.include?(sq)
@@ -126,6 +126,7 @@ class Board
 
     adjacent_squares(coord).each { |pos| mines += 1 if @mines.include?(pos) }
 
+    return '_' if mines == 0
     mines.to_s
   end
 
