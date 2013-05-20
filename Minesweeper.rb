@@ -3,25 +3,35 @@ require 'set'
 class Minesweeper
 
   def initialize
-    @board = Board.new
+    @board = Board.new(get_game_size)
     @player = Player.new
+  end
+
+  def get_game_size
+    puts "Choose a game size: small (s) or large (l): "
+    size = gets.chomp
+    until size == "l" || size == "s"
+      puts "Invalid choice, please enter s or l."
+      size = gets.chomp
+    end
+    if size == 's'
+      return [9, 10]
+    else
+      return [16, 40]
+    end
   end
 
   def play
     won = false
     while true
-      board.print_board
+      @board.print_board
 
-      if all_mines_flagged?
+      if @board.all_mines_flagged?
         won = true
         break
       end
 
-      choice = user_choice
-
-      break if user_picked_mine?
-
-      #reveal(choice)
+      break unless @board.handle_move(@player.get_move)
     end
 
     if won
@@ -29,27 +39,26 @@ class Minesweeper
     else
       puts "You suck at minesweeper."
     end
-
   end
-
 end
 
 
 class Board
   attr_accessor :board, :mines
 
-  def initialize
+  def initialize(size)
+    @size = size
     @mines = []
-    @board = Array.new(9) { Array.new(9, '?') }
+    @board = Array.new(@size[0]) { Array.new(@size[0], '?') }
     set_mines
   end
 
   def set_mines
     i = 0
-    while i < 10
-      x = rand(9)
-      y = rand(9)
-      if @board[x][y] == '?'
+    while i < @size[1]
+      x = rand(@size[0])
+      y = rand(@size[0])
+      unless @mines.include? [x, y]
         @mines << [x, y]
         i += 1
       end
@@ -68,9 +77,16 @@ class Board
     nil
   end
 
-  def handle_move(choice, coord)
-    if choice
+  def handle_move(move)
+    case move[0]
+    when 'F'
+      @board[move[1]][move[2]] = 'F'
+    when 'R'
+      return false if @mines.include?([move[1], move[2]])
+      reveal([move[1], move[2]])
     end
+
+    true
   end
 
   def flag(coord)
@@ -115,7 +131,7 @@ class Board
 
   def move_valid?(coord)
     coord.each do |pos|
-      return false if pos < 0 || pos > 8
+      return false if pos < 0 || pos > @size[0] - 1
     end
     true
   end
@@ -140,17 +156,22 @@ class Player
   end
 
   def get_position
-    puts "Enter a x and y co-ordinate for your move: "
-    x = gets.chomp
-    y = gets.chomp
+    puts "Enter a x co-ordinate for your move: "
+    x = gets.chomp.to_i
+    puts "Enter a y co-ordinate for your move: "
+    y = gets.chomp.to_i
     [x, y]
   end
 
   def get_choice
     puts "Do you wish to flag a move or click? Enter 'F' to flag or 'R' to reveal"
-    gets.chomp
+    input = gets.chomp
+    until input == 'F' || input == 'R'
+      puts "Invalid input. Please enter F or R"
+      gets.chomp
+    end
+    input
   end
 end
-
 
 
