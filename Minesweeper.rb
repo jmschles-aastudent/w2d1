@@ -1,3 +1,5 @@
+require 'set'
+
 class Minesweeper
 
 
@@ -11,6 +13,7 @@ class Board
   attr_accessor :board, :mines
 
   def initialize
+    @mines = []
     @board = Array.new(9) { Array.new(9, '?') }
     set_mines
   end
@@ -21,6 +24,7 @@ class Board
       x = rand(9)
       y = rand(9)
       if @board[x][y] == '?'
+        @mines << [x, y]
         @board[x][y] = 'M'
         i += 1
       end
@@ -48,16 +52,40 @@ class Board
     @board[coord[0], coord[1]] = 'F'
   end
 
-  def reveal
+  def reveal(coord, visited_squares = Set.new)
+    num_adj_mines = adjacent_mines(coord)
+    p num_adj_mines
+    unless num_adj_mines == "0"
+      @board[coord[0]][coord[1]] = num_adj_mines
+      return
+    else
+      @board[coord[0]][coord[1]] = "0"
 
+      adjacent_squares(coord).each do |sq|
+        next if visited_squares.include?(sq)
+        visited_squares << sq
+        p sq
+        reveal(sq, visited_squares)
+      end
+    end
+  end
+
+  def adjacent_squares(coord)
+    adj_squares = []
+    [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]].each do |delta|
+      x = coord[0] + delta[0]
+      y = coord[1] + delta[1]
+      adj_squares << [x, y] if move_valid?([x, y])
+    end
+
+    adj_squares
   end
 
   def adjacent_mines(coord)
     mines = 0
     x, y = coord
 
-    deltas = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]
-    deltas.each { |i, j| mines += 1 if move_valid?([x+i, y+j]) && @board[x+i][y+j] == 'M' }
+    adjacent_squares(coord).each { |pos| mines += 1 if @board[pos[0]][pos[1]] == 'M' }
 
     mines.to_s
   end
@@ -87,3 +115,6 @@ class Player
     gets.chomp
   end
 end
+
+
+
