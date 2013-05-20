@@ -1,15 +1,29 @@
 require 'set'
+require 'yaml'
 
 class Minesweeper
 
-  def initialize(filename = "game.txt")
-    @board = Board.new(get_game_size)
+  def initialize
+    case new_or_load
+    when 'L'
+      puts "Input filename: "
+      filename = gets.chomp
+      yaml_board = File.read(filename)
+      @board = YAML::load(yaml_board)
+    when 'N'
+      @board = Board.new(get_game_size)
+    end
     @player = Player.new
+
   end
 
-  def load
-
-
+  def new_or_load
+    puts "Start new game (N) or load (L)?"
+    choice = gets.chomp.upcase
+    until choice == 'N' || choice == 'L'
+      choice = new_or_load
+    end
+    choice
   end
 
   def get_game_size
@@ -27,7 +41,7 @@ class Minesweeper
   end
 
   def play
-    start_time = Time.now
+    @board.start_time = Time.now
     won = false
     while true
       @board.print_board
@@ -40,8 +54,7 @@ class Minesweeper
       break unless @board.handle_move(@player.get_move)
     end
 
-    end_time = Time.now
-    total_time = end_time - start_time
+    total_time = Time.now - @board.start_time + @board.time_so_far
     if won
       puts "Yay! You won in #{total_time.ceil} seconds"
     else
@@ -57,9 +70,12 @@ end
 
 
 class Board
-  attr_accessor :board, :mines
+  attr_accessor :board, :mines, :start_time
+  attr_reader :time_so_far
 
   def initialize(size)
+    @time_so_far = nil
+    @start_time = nil
     @size = size
     @mines = []
     @board = Array.new(@size[0]) { Array.new(@size[0], '?') }
@@ -99,6 +115,21 @@ class Board
     when 'R'
       return false if @mines.include?([move[0], move[1]])
       reveal([move[0], move[1]])
+    when 'S'
+      puts "Enter a filename: "
+      filename = gets.chomp
+      if @time_so_far.nil?
+        @time_so_far = Time.now - @start_time
+      else
+        add = Time.now - @start_time
+        p add
+        @time_so_far += add
+      end
+      File.open(filename || "savegame.txt", "w") do |f|
+        f.puts self.to_yaml
+      end
+
+      return false
     end
 
     true
@@ -173,6 +204,7 @@ class Board
 end
 
 class Player
+  CHOICES = ['F', 'R', 'U', 'S'].to_set
 
   def get_move
     type = get_choice
@@ -194,10 +226,11 @@ class Player
   end
 
   def get_choice
-    puts "Enter 'F' to flag, 'R' to reveal, or 'U' to unflag."
+    puts "Enter 'F' to flag, 'R' to reveal, 'U' to unflag,"
+    puts "or 'S' to save your game and quit."
     input = gets.chomp.upcase
-    until input == 'F' || input == 'R' || input == 'U'
-      puts "Invalid input. Please enter F, R, or U."
+    until CHOICES.include?(input)
+      puts "Invalid input. Please enter F, R, U, or S"
       input = gets.chomp.upcase
     end
     input
