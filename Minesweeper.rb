@@ -25,7 +25,6 @@ class Board
       y = rand(9)
       if @board[x][y] == '?'
         @mines << [x, y]
-        @board[x][y] = 'M'
         i += 1
       end
     end
@@ -54,7 +53,6 @@ class Board
 
   def reveal(coord, visited_squares = Set.new)
     num_adj_mines = adjacent_mines(coord)
-    p num_adj_mines
     unless num_adj_mines == "0"
       @board[coord[0]][coord[1]] = num_adj_mines
       return
@@ -64,7 +62,6 @@ class Board
       adjacent_squares(coord).each do |sq|
         next if visited_squares.include?(sq)
         visited_squares << sq
-        p sq
         reveal(sq, visited_squares)
       end
     end
@@ -85,7 +82,7 @@ class Board
     mines = 0
     x, y = coord
 
-    adjacent_squares(coord).each { |pos| mines += 1 if @board[pos[0]][pos[1]] == 'M' }
+    adjacent_squares(coord).each { |pos| mines += 1 if @mines.include?(pos) }
 
     mines.to_s
   end
