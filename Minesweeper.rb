@@ -7,7 +7,30 @@ class Minesweeper
     @player = Player.new
   end
 
+  def play
+    won = false
+    while true
+      board.print_board
 
+      if all_mines_flagged?
+        won = true
+        break
+      end
+
+      choice = user_choice
+
+      break if user_picked_mine?
+
+      #reveal(choice)
+    end
+
+    if won
+      puts "Yay! You win!"
+    else
+      puts "You suck at minesweeper."
+    end
+
+  end
 
 end
 
@@ -110,12 +133,17 @@ end
 class Player
 
   def get_move
+    type = get_choice
+    x, y = get_position
 
+    [type, x, y]
+  end
+
+  def get_position
     puts "Enter a x and y co-ordinate for your move: "
     x = gets.chomp
     y = gets.chomp
     [x, y]
-
   end
 
   def get_choice
