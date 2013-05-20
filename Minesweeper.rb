@@ -2,7 +2,10 @@ require 'set'
 
 class Minesweeper
 
-
+  def initialize
+    @board = Board.new
+    @player = Player.new
+  end
 
 
 
@@ -91,6 +94,14 @@ class Board
     coord.each do |pos|
       return false if pos < 0 || pos > 8
     end
+    true
+  end
+
+  def all_mines_flagged?
+    @mines.each do |pos|
+      return false unless @board[pos[0]][pos[1]] == 'F'
+    end
+
     true
   end
 
