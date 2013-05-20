@@ -2,9 +2,14 @@ require 'set'
 
 class Minesweeper
 
-  def initialize
+  def initialize(filename = "game.txt")
     @board = Board.new(get_game_size)
     @player = Player.new
+  end
+
+  def load
+
+
   end
 
   def get_game_size
@@ -22,6 +27,7 @@ class Minesweeper
   end
 
   def play
+    start_time = Time.now
     won = false
     while true
       @board.print_board
@@ -34,14 +40,18 @@ class Minesweeper
       break unless @board.handle_move(@player.get_move)
     end
 
+    end_time = Time.now
+    total_time = end_time - start_time
     if won
-      puts "Yay! You win!"
+      puts "Yay! You won in #{total_time.ceil} seconds"
     else
       @board.reveal_mines
       @board.print_board
       puts "BOOM!"
       5.times { puts "You suck at minesweeper." }
     end
+
+
   end
 end
 
