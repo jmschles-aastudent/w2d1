@@ -6,26 +6,23 @@ class Minesweeper
   def initialize
     case new_or_load
     when 'L'
-      puts "Input filename: "
-      filename = gets.chomp
-      yaml_board = File.read(filename)
-      @board = YAML::load(yaml_board)
+      load_game
     when 'N'
-      @board = Board.new(get_game_size)
+      create_new_game
     end
     @player = Player.new
-    play
+    # play
   end
 
   def self.get_high_scores
-    highscores = File.readlines("highscores.txt")
-    highscores = highscores.map {|score| score.chomp.to_f}
+    all_scores = File.readlines("highscores.txt")
+    highscores = all_scores.map {|score| score.chomp.to_f}
     highscores.sort!
+    highscores = highscores[0..9]
 
-    10.times do |i|
-      break if highscores[i].nil?
-      puts "#{highscores[i]} seconds"
-    end
+    highscores.each { |score| puts "#{score} seconds" }
+
+    true
   end
 
   def play
@@ -43,12 +40,20 @@ class Minesweeper
       break if state == :lose || state == :save
     end
 
+    end_game(state)
+
+  end
+
+  private
+
+  def end_game(state)
+
     total_time = Time.now - @board.start_time + @board.time_so_far
+
     if state == :win
-      puts "Yay! You won in #{total_time.ceil} seconds"
-      File.open("highscores.txt", "a") do |f|
-        f.puts total_time
-      end
+      puts "Yay! You won in #{total_time.ceil} seconds."
+      File.open("highscores.txt", "a") { |f| f.puts total_time }
+
     elsif state == :lose
       @board.reveal_mines
       @board.print_board
@@ -57,20 +62,31 @@ class Minesweeper
         puts "You suck at minesweeper."
         sleep(1)
       end
+
     else
       puts "See you later!"
-      nil
     end
+
+    nil
   end
 
-  private
+  def load_game
+    puts "Input filename: "
+    filename = gets.chomp
+    yaml_board = File.read(filename)
+    @board = YAML::load(yaml_board)
+  end
+
+  def create_new_game
+    @board = Board.new(get_game_size)
+  end
 
   def get_game_size
     puts "Choose a game size: small (s) or large (l): "
-    size = gets.chomp
+    size = gets.chomp.downcase
     until size == "l" || size == "s"
       puts "Invalid choice, please enter s or l."
-      size = gets.chomp
+      size = gets.chomp.downcase
     end
     if size == 's'
       return [9, 10]
@@ -125,16 +141,8 @@ class Board
       return :lose if @mines.include?([move[0], move[1]])
       reveal([move[0], move[1]])
     when 'S'
-      puts "Enter a filename: "
-      filename = gets.chomp
+      return save_game
 
-      @time_so_far += Time.now - @start_time
-
-      File.open(filename || "savegame.txt", "w") do |f|
-        f.puts self.to_yaml
-      end
-
-      return :save
     end
 
     return true
@@ -155,6 +163,19 @@ class Board
   end
 
   private
+
+  def save_game
+    puts "Enter a filename: "
+    filename = gets.chomp
+
+    @time_so_far += Time.now - @start_time
+
+    File.open(filename || "savegame.txt", "w") do |f|
+      f.puts self.to_yaml
+    end
+
+    :save
+  end
 
   def flag(coord)
     @board[coord[0]][coord[1]] = 'F'
@@ -244,6 +265,7 @@ class Player
       puts "Invalid coordinates, try again."
       x, y = get_position
     end
+
     [x, y]
   end
 
