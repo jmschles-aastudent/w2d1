@@ -14,7 +14,7 @@ class Minesweeper
       @board = Board.new(get_game_size)
     end
     @player = Player.new
-
+    # play
   end
 
   def new_or_load
@@ -40,31 +40,47 @@ class Minesweeper
     end
   end
 
+  def self.get_high_scores
+    highscores = File.readlines("highscores.txt")
+    highscores = highscores.map {|score| score.chomp.to_f}
+    highscores.sort!
+
+    10.times do |i|
+      break if highscores[i].nil?
+      puts "#{highscores[i]} seconds"
+    end
+  end
+
   def play
     @board.start_time = Time.now
-    won = false
+    state = nil
     while true
       @board.print_board
 
       if @board.all_mines_flagged?
-        won = true
+        state = :win
         break
       end
 
-      break unless @board.handle_move(@player.get_move)
+      state = @board.handle_move(@player.get_move)
+      break if state == :lose || state == :save
     end
 
     total_time = Time.now - @board.start_time + @board.time_so_far
-    if won
+    if state == :win
       puts "Yay! You won in #{total_time.ceil} seconds"
-    else
+      File.open("highscores.txt", "a") do |f|
+        f.puts total_time
+      end
+    elsif state == :lose
       @board.reveal_mines
       @board.print_board
       puts "BOOM!"
       5.times { puts "You suck at minesweeper." }
+    else
+      puts "See you later!"
+      nil
     end
-
-
   end
 end
 
@@ -74,7 +90,7 @@ class Board
   attr_reader :time_so_far
 
   def initialize(size)
-    @time_so_far = nil
+    @time_so_far = 0
     @start_time = nil
     @size = size
     @mines = []
@@ -113,26 +129,24 @@ class Board
     when 'U'
       unflag(move)
     when 'R'
-      return false if @mines.include?([move[0], move[1]])
+      return :lose if @mines.include?([move[0], move[1]])
       reveal([move[0], move[1]])
     when 'S'
       puts "Enter a filename: "
       filename = gets.chomp
-      if @time_so_far.nil?
-        @time_so_far = Time.now - @start_time
-      else
-        add = Time.now - @start_time
-        p add
-        @time_so_far += add
-      end
+      # if @time_so_far == 0
+      #   @time_so_far = Time.now - @start_time
+      # else
+        @time_so_far += Time.now - @start_time
+        #end
       File.open(filename || "savegame.txt", "w") do |f|
         f.puts self.to_yaml
       end
 
-      return false
+      return :save
     end
 
-    true
+    return true
   end
 
   def flag(coord)
@@ -208,6 +222,7 @@ class Player
 
   def get_move
     type = get_choice
+    return ['S'] if type == 'S'
     x, y = get_position
 
     [type, x, y]
