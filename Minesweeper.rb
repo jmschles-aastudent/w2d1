@@ -14,30 +14,7 @@ class Minesweeper
       @board = Board.new(get_game_size)
     end
     @player = Player.new
-    # play
-  end
-
-  def new_or_load
-    puts "Start new game (N) or load (L)?"
-    choice = gets.chomp.upcase
-    until choice == 'N' || choice == 'L'
-      choice = new_or_load
-    end
-    choice
-  end
-
-  def get_game_size
-    puts "Choose a game size: small (s) or large (l): "
-    size = gets.chomp
-    until size == "l" || size == "s"
-      puts "Invalid choice, please enter s or l."
-      size = gets.chomp
-    end
-    if size == 's'
-      return [9, 10]
-    else
-      return [16, 40]
-    end
+    play
   end
 
   def self.get_high_scores
@@ -76,11 +53,39 @@ class Minesweeper
       @board.reveal_mines
       @board.print_board
       puts "BOOM!"
-      5.times { puts "You suck at minesweeper." }
+      5.times do
+        puts "You suck at minesweeper."
+        sleep(1)
+      end
     else
       puts "See you later!"
       nil
     end
+  end
+
+  private
+
+  def get_game_size
+    puts "Choose a game size: small (s) or large (l): "
+    size = gets.chomp
+    until size == "l" || size == "s"
+      puts "Invalid choice, please enter s or l."
+      size = gets.chomp
+    end
+    if size == 's'
+      return [9, 10]
+    else
+      return [16, 40]
+    end
+  end
+
+  def new_or_load
+    puts "Start new game (N) or load (L)?"
+    choice = gets.chomp.upcase
+    until choice == 'N' || choice == 'L'
+      choice = new_or_load
+    end
+    choice
   end
 end
 
@@ -96,18 +101,6 @@ class Board
     @mines = []
     @board = Array.new(@size[0]) { Array.new(@size[0], '?') }
     set_mines
-  end
-
-  def set_mines
-    i = 0
-    while i < @size[1]
-      x = rand(@size[0])
-      y = rand(@size[0])
-      unless @mines.include? [x, y]
-        @mines << [x, y]
-        i += 1
-      end
-    end
   end
 
   def print_board
@@ -134,11 +127,9 @@ class Board
     when 'S'
       puts "Enter a filename: "
       filename = gets.chomp
-      # if @time_so_far == 0
-      #   @time_so_far = Time.now - @start_time
-      # else
-        @time_so_far += Time.now - @start_time
-        #end
+
+      @time_so_far += Time.now - @start_time
+
       File.open(filename || "savegame.txt", "w") do |f|
         f.puts self.to_yaml
       end
@@ -148,6 +139,22 @@ class Board
 
     return true
   end
+
+  def all_mines_flagged?
+    @mines.each do |pos|
+      return false unless @board[pos[0]][pos[1]] == 'F'
+    end
+
+    true
+  end
+
+  def reveal_mines
+    @mines.each do |mine|
+      @board[mine[0]][mine[1]] = '*'
+    end
+  end
+
+  private
 
   def flag(coord)
     @board[coord[0]][coord[1]] = 'F'
@@ -201,17 +208,15 @@ class Board
     true
   end
 
-  def all_mines_flagged?
-    @mines.each do |pos|
-      return false unless @board[pos[0]][pos[1]] == 'F'
-    end
-
-    true
-  end
-
-  def reveal_mines
-    @mines.each do |mine|
-      @board[mine[0]][mine[1]] = '*'
+  def set_mines
+    i = 0
+    while i < @size[1]
+      x = rand(@size[0])
+      y = rand(@size[0])
+      unless @mines.include? [x, y]
+        @mines << [x, y]
+        i += 1
+      end
     end
   end
 
@@ -227,6 +232,8 @@ class Player
 
     [type, x, y]
   end
+
+  private
 
   def get_position
     puts "Enter a x co-ordinate for your move: "
